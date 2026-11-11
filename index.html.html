@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Continuous Probability · AIML Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Palette from image:
+       #F6BD60 (warm yellow)
+       #F7EDE2 (cream)
+       #F5CAC3 (soft pink)
+       #84A59D (sage green)
+       #F28482 (coral pink)
+    */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #F7EDE2;
+      color: #4a3f3a;
+      line-height: 1.5;
+      padding: 1.5rem;
+    }
+
+    .app { max-width: 1280px; margin: 0 auto; }
+
+    /* ---------- TOP BAR ---------- */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      background: #ffffffec;
+      padding: 1rem 1.8rem;
+      border-radius: 2rem;
+      box-shadow: 0 8px 20px -8px rgba(132, 165, 157, 0.25);
+      border: 1px solid #F5CAC3;
+      backdrop-filter: blur(4px);
+    }
+    .logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #84A59D, #F28482);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo span {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #a48e82;
+      display: block;
+      -webkit-text-fill-color: #a48e82;
+    }
+    .nav-links { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .nav-btn {
+      background: transparent; border: none; padding: 0.6rem 1.2rem;
+      font-size: 0.95rem; font-weight: 500; border-radius: 3rem;
+      color: #7a6a60; cursor: pointer; transition: all 0.2s;
+    }
+    .nav-btn:hover { background: #F5CAC3; color: #5a4a42; }
+    .nav-btn.active { background: #84A59D; color: #fff; box-shadow: 0 4px 10px rgba(132,165,157,0.4); }
+
+    /* ---------- PAGES ---------- */
+    .page { display: none; animation: fade 0.25s ease; }
+    .page.active { display: block; }
+    @keyframes fade {
+      from { opacity: 0.4; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---------- CARDS ---------- */
+    .card {
+      background: #fffffffa; border-radius: 1.8rem; padding: 1.8rem;
+      margin-bottom: 1.8rem; border: 1px solid #F5CAC3;
+      box-shadow: 0 12px 28px -12px rgba(132,165,157,0.15);
+    }
+    .card h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #5a4a42; }
+    .card h3 { font-size: 1.2rem; font-weight: 600; margin: 1.2rem 0 0.8rem; color: #6b5a50; }
+
+    .industry-tag {
+      display: inline-block; background: #F5CAC3; color: #5a4a42;
+      font-size: 0.8rem; font-weight: 600; padding: 0.3rem 1rem;
+      border-radius: 3rem; margin-bottom: 1rem; text-transform: uppercase;
+    }
+    .problem-box {
+      background: #F7EDE2; border-left: 4px solid #F6BD60;
+      padding: 1rem 1.5rem; border-radius: 0 1.2rem 1.2rem 0;
+      margin: 1rem 0 1.2rem; color: #5a4a42;
+    }
+    .formula-box {
+      background: #F7EDE2; font-family: 'Courier New', monospace;
+      padding: 0.8rem 1.2rem; border-radius: 1rem; font-size: 1rem;
+      text-align: center; margin: 0.6rem 0; color: #5a4a42;
+      border: 1px solid #F5CAC3;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .top-bar { flex-direction: column; align-items: stretch; gap: 0.8rem; padding: 1.2rem; }
+      .nav-links { justify-content: center; }
+    }
+
+    /* ---------- INPUTS & SLIDERS ---------- */
+    .input-group { margin-bottom: 1.2rem; }
+    .input-group label {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.9rem; font-weight: 500; color: #7a6a60; margin-bottom: 0.3rem;
+    }
+    .input-group label .value-badge {
+      background: #F6BD60; color: #fff; padding: 0.15rem 0.6rem;
+      border-radius: 2rem; font-size: 0.8rem; font-weight: 600;
+    }
+    .input-group input[type="range"] {
+      width: 100%; margin: 0.3rem 0; -webkit-appearance: none;
+      height: 6px; border-radius: 3px; background: #F5CAC3;
+      outline: none;
+    }
+    .input-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      border-radius: 50%; background: #84A59D; cursor: pointer;
+      border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .input-group input[type="number"] {
+      width: 100%; padding: 0.6rem 1rem; border: 1px solid #F5CAC3;
+      border-radius: 1rem; font-size: 0.95rem; font-family: inherit;
+      background: #fff; color: #4a3f3a; transition: 0.15s;
+    }
+    .input-group input[type="number"]:focus {
+      outline: 2px solid #F6BD60; border-color: #F6BD60;
+    }
+    .input-group input.error { border-color: #F28482; outline-color: #F28482; }
+
+    .error-msg {
+      color: #F28482; font-size: 0.8rem; margin-top: 0.2rem; min-height: 1.2rem;
+    }
+
+    /* ---------- RESULTS ---------- */
+    .result-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .result-card {
+      background: #F7EDE2; border-radius: 1.2rem; padding: 1.2rem;
+      border: 1px solid #F5CAC3; text-align: center;
+    }
+    .result-card .label {
+      font-size: 0.85rem; font-weight: 500; color: #7a6a60; margin-bottom: 0.3rem;
+    }
+    .result-card .value {
+      font-size: 1.6rem; font-weight: 700; color: #5a4a42;
+    }
+    .result-card .value.green { color: #84A59D; }
+    .result-card .value.coral { color: #F28482; }
+    .result-card .value.yellow { color: #e5a84f; }
+    .result-card .unit { font-size: 0.8rem; font-weight: 400; color: #a48e82; }
+
+    .interpretation {
+      background: #F7EDE2; padding: 1.2rem 1.5rem; border-radius: 1.2rem;
+      margin-top: 1.5rem; border: 1px solid #F5CAC3; color: #5a4a42;
+    }
+    .interpretation strong { color: #84A59D; font-weight: 600; }
+
+    .btn-primary {
+      background: #F6BD60; color: #fff; border: none; padding: 0.85rem 1.8rem;
+      font-size: 1rem; font-weight: 600; border-radius: 3rem; cursor: pointer;
+      width: 100%; transition: 0.2s; box-shadow: 0 6px 14px -6px rgba(246,189,96,0.5);
+    }
+    .btn-primary:hover { background: #e5a84f; transform: translateY(-1px); }
+    .btn-primary:disabled { background: #F5CAC3; color: #b8a89e; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .chart-container { position: relative; width: 100%; height: 320px; margin-top: 0.5rem; }
+
+    .small-note { font-size: 0.85rem; color: #b8a89e; margin-top: 0.8rem; }
+
+    /* ---------- HOME PAGE ---------- */
+    .home-hero {
+      text-align: center;
+      padding: 2.5rem 1.5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-hero h2 {
+      font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em;
+      background: linear-gradient(145deg, #84A59D, #F28482);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.8rem;
+    }
+    .home-hero p { font-size: 1.1rem; color: #8a7a70; max-width: 650px; margin: 0 auto; }
+
+    .feature-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem; margin-top: 2rem;
+    }
+    @media (max-width: 800px) { .feature-grid { grid-template-columns: 1fr; } }
+
+    .feature-card {
+      background: #fffffffa; border-radius: 1.8rem; padding: 1.8rem 1.5rem;
+      border: 1px solid #F5CAC3; transition: 0.2s; cursor: pointer;
+      box-shadow: 0 6px 14px -8px rgba(132,165,157,0.1);
+    }
+    .feature-card:hover {
+      border-color: #F6BD60; box-shadow: 0 16px 28px -14px rgba(246,189,96,0.2);
+      transform: translateY(-2px); background: #ffffff;
+    }
+    .feature-card .icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .feature-card h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.4rem; color: #5a4a42; }
+    .feature-card p { color: #8a7a70; font-size: 0.95rem; }
+    .badge {
+      display: inline-block; background: #F5CAC3; color: #5a4a42;
+      font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.8rem;
+      border-radius: 2rem; margin-top: 0.8rem;
+    }
+
+    hr { border: none; border-top: 1px solid #F5CAC3; margin: 1.8rem 0 0.8rem; }
+    footer { text-align: center; font-size: 0.85rem; color: #c9b8ae; padding: 2rem 0 0.5rem; }
+
+    .placeholder-chart {
+      background: #F7EDE2; border: 1px dashed #F5CAC3; border-radius: 1.2rem;
+      height: 180px; display: flex; align-items: center; justify-content: center;
+      color: #b8a89e; font-size: 0.95rem; font-weight: 500;
+      margin-top: 1rem; flex-direction: column; gap: 0.5rem;
+    }
+    .placeholder-chart span { font-size: 1.8rem; opacity: 0.7; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top navigation -->
+  <header class="top-bar">
+    <div class="logo">
+      <h1>Continuous Probability</h1>
+      <span>Industry Applications · AIML</span>
+    </div>
+    <nav class="nav-links" id="navLinks">
+      <button class="nav-btn active" data-page="home">🏠 Home</button>
+      <button class="nav-btn" data-page="normal">📊 Normal</button>
+      <button class="nav-btn" data-page="exponential">⏱️ Exponential</button>
+      <button class="nav-btn" data-page="clt">📈 CLT</button>
+    </nav>
+  </header>
+
+  <!-- ========== HOME PAGE ========== -->
+  <section id="page-home" class="page active">
+    <div class="card home-hero">
+      <h2>Learn continuous distributions through real industry cases</h2>
+      <p>Interactive modules designed for undergraduate AIML students — no heavy math, just intuition and practical insight.</p>
+      <div class="feature-grid">
+        <div class="feature-card" data-goto="normal">
+          <div class="icon">🏭</div>
+          <h3>Normal Distribution</h3>
+          <p>Manufacturing quality control — model part dimensions and defect rates.</p>
+          <div class="badge">Quality Engineering</div>
+        </div>
+        <div class="feature-card" data-goto="exponential">
+          <div class="icon">☁️</div>
+          <h3>Exponential Distribution</h3>
+          <p>Cloud request inter-arrival times — understand bursty traffic.</p>
+          <div class="badge">Cloud Computing</div>
+        </div>
+        <div class="feature-card" data-goto="clt">
+          <div class="icon">📦</div>
+          <h3>Central Limit Theorem</h3>
+          <p>Warehouse processing time — why averages become normal.</p>
+          <div class="badge">Logistics & AI</div>
+        </div>
+      </div>
+      <div style="margin-top: 2rem; font-size: 0.95rem; color: #8a7a70;">
+        Each module includes: industry problem → parameters → formula → interactive calculation → dynamic chart → interpretation.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== NORMAL DISTRIBUTION (FULLY INTERACTIVE) ========== -->
+  <section id="page-normal" class="page">
+    <div class="card">
+      <div class="industry-tag">🏭 Manufacturing Quality Control</div>
+      <h2>Normal Distribution — Shaft Diameter</h2>
+
+      <div class="problem-box">
+        <strong>Industry problem:</strong> A factory produces shafts. The target diameter is <strong>10 mm</strong>.
+        Quality control requires the diameter to be between a <strong>lower specification limit (LSL)</strong> and an <strong>upper specification limit (USL)</strong>.
+        Shafts outside this range are defective. The diameter follows a normal distribution with mean μ and standard deviation σ.
+      </div>
+
+      <div class="grid-2">
+        <!-- LEFT: Controls -->
+        <div>
+          <h3>🎛️ Adjust the parameters</h3>
+
+          <!-- Mean -->
+          <div class="input-group">
+            <label>
+              Mean diameter (μ)
+              <span class="value-badge" id="meanVal">10.00 mm</span>
+            </label>
+            <input type="range" id="meanSlider" min="9.5" max="10.5" step="0.01" value="10.00">
+            <input type="number" id="meanInput" min="9.5" max="10.5" step="0.01" value="10.00">
+            <div class="error-msg" id="meanError"></div>
+          </div>
+
+          <!-- Std Dev -->
+          <div class="input-group">
+            <label>
+              Standard deviation (σ)
+              <span class="value-badge" id="stdVal">0.05 mm</span>
+            </label>
+            <input type="range" id="stdSlider" min="0.01" max="0.20" step="0.01" value="0.05">
+            <input type="number" id="stdInput" min="0.01" max="0.20" step="0.01" value="0.05">
+            <div class="error-msg" id="stdError"></div>
+          </div>
+
+          <!-- LSL (Expanded Range) -->
+          <div class="input-group">
+            <label>
+              Lower specification limit (LSL)
+              <span class="value-badge" id="lslVal">9.90 mm</span>
+            </label>
+            <input type="range" id="lslSlider" min="9.50" max="10.20" step="0.01" value="9.90">
+            <input type="number" id="lslInput" min="9.50" max="10.20" step="0.01" value="9.90">
+            <div class="error-msg" id="lslError"></div>
+          </div>
+
+          <!-- USL (Expanded Range) -->
+          <div class="input-group">
+            <label>
+              Upper specification limit (USL)
+              <span class="value-badge" id="uslVal">10.10 mm</span>
+            </label>
+            <input type="range" id="uslSlider" min="9.80" max="10.50" step="0.01" value="10.10">
+            <input type="number" id="uslInput" min="9.80" max="10.50" step="0.01" value="10.10">
+            <div class="error-msg" id="uslError"></div>
+          </div>
+
+          <div class="formula-box" style="margin-top: 1rem;">
+            f(x) = (1 / (σ√(2π))) · e<sup>−(x−μ)²/(2σ²)</sup>
+          </div>
+        </div>
+
+        <!-- RIGHT: Chart -->
+        <div>
+          <h3>📈 Bell curve &amp; specification limits</h3>
+          <div class="chart-container">
+            <canvas id="normalChart"></canvas>
+          </div>
+          <p class="small-note" style="text-align:center;">
+            The shaded area between LSL and USL is the proportion of <em>good</em> shafts.
+          </p>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <h3 style="margin-top: 2rem;">📋 Probability results (using normal CDF)</h3>
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="label">1. Density at selected point (10 mm)</div>
+          <div class="value" id="densityVal">0.000</div>
+          <div class="unit">density/mm</div>
+        </div>
+        <div class="result-card">
+          <div class="label">2. Diameter within spec (good)</div>
+          <div class="value green" id="withinVal">0.00%</div>
+        </div>
+        <div class="result-card">
+          <div class="label">3. Below LSL (defect)</div>
+          <div class="value coral" id="belowVal">0.00%</div>
+        </div>
+        <div class="result-card">
+          <div class="label">4. Above USL (defect)</div>
+          <div class="value coral" id="aboveVal">0.00%</div>
+        </div>
+        <div class="result-card">
+          <div class="label">5. Expected defective percentage</div>
+          <div class="value yellow" id="defectVal">0.00%</div>
+        </div>
+      </div>
+
+      <!-- INTERPRETATION -->
+      <div class="interpretation" id="interpretationText">
+        <strong>Interpretation:</strong> Adjust the sliders to see how the curve and probabilities change.
+        The green area represents shafts that meet the specification. The red areas are defective shafts.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== EXPONENTIAL DISTRIBUTION (FULLY INTERACTIVE) ========== -->
+  <section id="page-exponential" class="page">
+    <div class="card">
+      <div class="industry-tag">☁️ Cloud Request Inter-arrival Time</div>
+      <h2>Exponential Distribution</h2>
+
+      <div class="problem-box">
+        <strong>Industry problem:</strong> A cloud service receives requests according to a Poisson process with a constant average rate of <strong>λ = 12 requests per minute</strong>. The time between consecutive requests follows an exponential distribution. We want to model the probability of waiting less than a certain time for the next request.
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h3>🎛️ Adjust the parameters</h3>
+          <!-- Lambda -->
+          <div class="input-group">
+            <label>
+              Arrival rate (λ) — requests per minute
+              <span class="value-badge" id="lambdaVal">12.0 /min</span>
+            </label>
+            <input type="range" id="lambdaSlider" min="1" max="30" step="0.5" value="12">
+            <input type="number" id="lambdaInput" min="1" max="30" step="0.5" value="12">
+            <div class="error-msg" id="lambdaError"></div>
+          </div>
+
+          <!-- t -->
+          <div class="input-group">
+            <label>
+              Time threshold (t) — seconds
+              <span class="value-badge" id="tVal">5.0 s</span>
+            </label>
+            <input type="range" id="tSlider" min="0.1" max="30" step="0.1" value="5">
+            <input type="number" id="tInput" min="0.1" max="30" step="0.1" value="5">
+            <div class="error-msg" id="tError"></div>
+          </div>
+
+          <!-- t1, t2 for conditional -->
+          <div class="input-group">
+            <label>
+              t₁ — seconds (for conditional)
+              <span class="value-badge" id="t1Val">2.0 s</span>
+            </label>
+            <input type="range" id="t1Slider" min="0.1" max="30" step="0.1" value="2">
+            <input type="number" id="t1Input" min="0.1" max="30" step="0.1" value="2">
+            <div class="error-msg" id="t1Error"></div>
+          </div>
+          <div class="input-group">
+            <label>
+              t₂ — seconds (t₂ ≥ t₁)
+              <span class="value-badge" id="t2Val">6.0 s</span>
+            </label>
+            <input type="range" id="t2Slider" min="0.1" max="30" step="0.1" value="6">
+            <input type="number" id="t2Input" min="0.1" max="30" step="0.1" value="6">
+            <div class="error-msg" id="t2Error"></div>
+          </div>
+
+          <h3 style="margin-top: 1.2rem;">📐 Formulas</h3>
+          <div class="formula-box">
+            f(t) = λ · e<sup>−λt</sup> &nbsp; (t ≥ 0)
+          </div>
+          <div class="formula-box" style="font-size: 0.95rem;">
+            P(T ≤ t) = 1 − e<sup>−λt</sup> &nbsp;|&nbsp; P(T &gt; t) = e<sup>−λt</sup>
+          </div>
+          <div class="formula-box" style="font-size: 0.95rem;">
+            P(T &gt; t₂ | T &gt; t₁) = e<sup>−λ(t₂−t₁)</sup>
+          </div>
+          <p class="small-note">Mean inter-arrival = 1/λ &nbsp;·&nbsp; Variance = 1/λ²</p>
+        </div>
+
+        <!-- Right: Chart -->
+        <div>
+          <h3>📈 Exponential density &amp; shaded probability</h3>
+          <div class="chart-container">
+            <canvas id="expChart"></canvas>
+          </div>
+          <p class="small-note" style="text-align:center;">
+            The shaded area represents P(T ≤ t). The right tail (unshaded) is P(T &gt; t).
+          </p>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <h3 style="margin-top: 2rem;">📋 Probability results (using exponential CDF)</h3>
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="label">Mean inter-arrival time</div>
+          <div class="value" id="expMeanVal">0.00</div>
+          <div class="unit">seconds</div>
+        </div>
+        <div class="result-card">
+          <div class="label">Variance of inter-arrival</div>
+          <div class="value" id="expVarVal">0.00</div>
+          <div class="unit">seconds²</div>
+        </div>
+        <div class="result-card">
+          <div class="label">P(T ≤ t)</div>
+          <div class="value green" id="expCDFVal">0.00%</div>
+        </div>
+        <div class="result-card">
+          <div class="label">P(T &gt; t)</div>
+          <div class="value coral" id="expTailVal">0.00%</div>
+        </div>
+        <div class="result-card">
+          <div class="label">P(T &gt; t₂ | T &gt; t₁)</div>
+          <div class="value yellow" id="expCondVal">0.00%</div>
+        </div>
+      </div>
+
+      <!-- INTERPRETATION -->
+      <div class="interpretation" id="expInterpretation">
+        <strong>Interpretation:</strong> Adjust the sliders to see how the exponential curve and probabilities change.
+        The shaded area under the curve up to time <em>t</em> gives the probability of the next request arriving within that time.
+        <br><br>
+        <strong>💡 Memoryless property:</strong> If you have already waited 2 seconds for a request, the probability of waiting an additional 3 seconds is the same as if you had just started waiting. The process "forgets" how long you have been waiting — because arrivals occur at a constant rate and are independent.
+        <br><br>
+        <em>Note: This models request inter-arrival times, assuming a constant-rate Poisson arrival process. It does not describe server response time.</em>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CENTRAL LIMIT THEOREM (PLACEHOLDER) ========== -->
+  <section id="page-clt" class="page">
+    <div class="card">
+      <div class="industry-tag">📦 Warehouse Processing Time</div>
+      <h2>Central Limit Theorem</h2>
+      <div class="problem-box">
+        <strong>Industry problem:</strong> A warehouse processes orders one by one. Each order’s processing time has some distribution (not necessarily normal). The manager wants to know the distribution of the <em>average</em> processing time for a batch of n orders. The Central Limit Theorem tells us that as n grows, the sample average becomes approximately normal — regardless of the original distribution.
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h3>Input parameters</h3>
+          <div class="input-group">
+            <label>Sample size (n) — number of orders in a batch</label>
+            <input type="number" id="cltSampleSize" value="30" min="1" step="1" disabled placeholder="e.g. 30">
+          </div>
+          <div class="input-group">
+            <label>Original distribution mean (μ)</label>
+            <input type="number" id="cltMean" value="12.0" step="0.1" disabled placeholder="e.g. 12.0">
+          </div>
+          <div class="input-group">
+            <label>Original standard deviation (σ)</label>
+            <input type="number" id="cltStd" value="4.0" step="0.1" min="0.1" disabled placeholder="e.g. 4.0">
+          </div>
+          <button class="btn-primary" disabled>📊 Simulate &amp; plot (coming soon)</button>
+          <p class="small-note">Interactive calculation will be enabled in the next step.</p>
+
+          <h3 style="margin-top: 1.5rem;">Mathematical statement</h3>
+          <div class="formula-box">
+            X̄ ~ N(μ, σ²/n) &nbsp; as n → ∞
+          </div>
+          <div class="formula-box" style="font-size: 0.95rem; margin-top: 0.4rem;">
+            Standard error = σ / √n
+          </div>
+        </div>
+        <div>
+          <h3>Dynamic visualization</h3>
+          <div class="placeholder-chart">
+            <span>📈</span>
+            Sampling distribution of the mean will appear here
+          </div>
+          <div class="interpretation">
+            <strong>Interpretation (preview):</strong> As you increase the sample size, the distribution of the sample mean becomes narrower and more bell-shaped. This is the magic of CLT — it lets us use normal-based methods even when raw data aren’t normal.
+          </div>
+        </div>
+      </div>
+      <hr>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.95rem; color: #8a7a70;">
+        <div><strong>n:</strong> items per batch</div>
+        <div><strong>μ, σ:</strong> mean &amp; spread of individual times</div>
+        <div><strong>X̄:</strong> average of n items</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Continuous Probability Distributions · AIML Undergraduate Module · Interactive prototype
+  </footer>
+</div>
+
+<script>
+  // ================================================================
+  // NAVIGATION
+  // ================================================================
+  (function() {
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const pages = {
+      home: document.getElementById('page-home'),
+      normal: document.getElementById('page-normal'),
+      exponential: document.getElementById('page-exponential'),
+      clt: document.getElementById('page-clt')
+    };
+
+    function showPage(pageId) {
+      Object.values(pages).forEach(p => p.classList.remove('active'));
+      if (pages[pageId]) pages[pageId].classList.add('active');
+      navBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.page === pageId) btn.classList.add('active');
+      });
+    }
+
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const page = e.currentTarget.dataset.page;
+        if (page) showPage(page);
+      });
+    });
+
+    document.querySelectorAll('.feature-card[data-goto]').forEach(card => {
+      card.addEventListener('click', () => {
+        const target = card.dataset.goto;
+        if (target && pages[target]) showPage(target);
+      });
+    });
+  })();
+
+  // ================================================================
+  // NORMAL DISTRIBUTION MODULE (FULLY INTERACTIVE)
+  // ================================================================
+  (function() {
+    // ---------- Normal distribution helpers ----------
+    function normalPDF(x, mean, std) {
+      if (std <= 0) return 0;
+      const exponent = -0.5 * Math.pow((x - mean) / std, 2);
+      return (1 / (std * Math.sqrt(2 * Math.PI))) * Math.exp(exponent);
+    }
+
+    function normalCDF(x, mean, std) {
+      if (std <= 0) return 0;
+      const z = (x - mean) / std;
+      const t = 1 / (1 + 0.2316419 * Math.abs(z));
+      const d = 0.3989423 * Math.exp(-z * z / 2);
+      let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+      if (z > 0) prob = 1 - prob;
+      return prob;
+    }
+
+    // ---------- DOM elements ----------
+    const meanSlider = document.getElementById('meanSlider');
+    const meanInput = document.getElementById('meanInput');
+    const meanVal = document.getElementById('meanVal');
+    const meanError = document.getElementById('meanError');
+
+    const stdSlider = document.getElementById('stdSlider');
+    const stdInput = document.getElementById('stdInput');
+    const stdVal = document.getElementById('stdVal');
+    const stdError = document.getElementById('stdError');
+
+    const lslSlider = document.getElementById('lslSlider');
+    const lslInput = document.getElementById('lslInput');
+    const lslVal = document.getElementById('lslVal');
+    const lslError = document.getElementById('lslError');
+
+    const uslSlider = document.getElementById('uslSlider');
+    const uslInput = document.getElementById('uslInput');
+    const uslVal = document.getElementById('uslVal');
+    const uslError = document.getElementById('uslError');
+
+    const densityVal = document.getElementById('densityVal');
+    const withinVal = document.getElementById('withinVal');
+    const belowVal = document.getElementById('belowVal');
+    const aboveVal = document.getElementById('aboveVal');
+    const defectVal = document.getElementById('defectVal');
+    const interpretationText = document.getElementById('interpretationText');
+
+    const ctx = document.getElementById('normalChart').getContext('2d');
+    let chart;
+
+    // ---------- Validation helpers ----------
+    function setError(el, msg) {
+      if (el) el.textContent = msg || '';
+    }
+
+    // ---------- Sync slider & number inputs ----------
+    function syncInputs(slider, input, valEl, unit, decimals, errorEl) {
+      slider.addEventListener('input', (e) => {
+        const v = parseFloat(e.target.value);
+        input.value = v.toFixed(decimals);
+        valEl.textContent = v.toFixed(decimals) + ' ' + unit;
+        input.classList.remove('error');
+        setError(errorEl, '');
+        updateAll();
+      });
+      input.addEventListener('input', (e) => {
+        let v = parseFloat(e.target.value);
+        if (isNaN(v)) return;
+        v = Math.min(Math.max(v, parseFloat(slider.min)), parseFloat(slider.max));
+        slider.value = v;
+        e.target.value = v.toFixed(decimals);
+        valEl.textContent = v.toFixed(decimals) + ' ' + unit;
+        input.classList.remove('error');
+        setError(errorEl, '');
+        updateAll();
+      });
+      input.addEventListener('blur', (e) => {
+        let v = parseFloat(e.target.value);
+        if (isNaN(v)) v = parseFloat(slider.value);
+        v = Math.min(Math.max(v, parseFloat(slider.min)), parseFloat(slider.max));
+        e.target.value = v.toFixed(decimals);
+        slider.value = v;
+        valEl.textContent = v.toFixed(decimals) + ' ' + unit;
+        updateAll();
+      });
+    }
+
+    // ---------- Main update function ----------
+    function updateAll() {
+      const mean = parseFloat(meanInput.value);
+      const std = parseFloat(stdInput.value);
+      const lsl = parseFloat(lslInput.value);
+      const usl = parseFloat(uslInput.value);
+
+      // Validation
+      let valid = true;
+      if (std <= 0) {
+        setError(stdError, 'σ must be positive.');
+        stdInput.classList.add('error');
+        valid = false;
+      } else {
+        setError(stdError, '');
+        stdInput.classList.remove('error');
+      }
+      if (lsl >= usl) {
+        setError(lslError, 'LSL must be less than USL.');
+        setError(uslError, 'USL must be greater than LSL.');
+        lslInput.classList.add('error');
+        uslInput.classList.add('error');
+        valid = false;
+      } else {
+        setError(lslError, '');
+        setError(uslError, '');
+        lslInput.classList.remove('error');
+        uslInput.classList.remove('error');
+      }
+
+      if (!valid) {
+        updateChart(mean, std, lsl, usl);
+        return;
+      }
+
+      // 1. Density at x = 10 mm (selected point)
+      const selectedX = 10.0;
+      const density = normalPDF(selectedX, mean, std);
+      densityVal.textContent = density.toFixed(4);
+
+      // 2. P(LSL < X < USL)
+      const cdfLSL = normalCDF(lsl, mean, std);
+      const cdfUSL = normalCDF(usl, mean, std);
+      const probWithin = Math.max(0, cdfUSL - cdfLSL);
+
+      // 3. P(X < LSL)
+      const probBelow = cdfLSL;
+
+      // 4. P(X > USL)
+      const probAbove = 1 - cdfUSL;
+
+      // 5. Defective percentage = P(X < LSL) + P(X > USL)
+      const probDefect = probBelow + probAbove;
+
+      withinVal.textContent = (probWithin * 100).toFixed(2) + '%';
+      belowVal.textContent = (probBelow * 100).toFixed(2) + '%';
+      aboveVal.textContent = (probAbove * 100).toFixed(2) + '%';
+      defectVal.textContent = (probDefect * 100).toFixed(2) + '%';
+
+      // Update chart
+      updateChart(mean, std, lsl, usl);
+
+      // Update interpretation — clear, contextual, and educational
+      const defectPercent = (probDefect * 100).toFixed(2);
+      const goodPercent = (probWithin * 100).toFixed(2);
+      if (probDefect < 0.01) {
+        interpretationText.innerHTML = `<strong>Excellent quality!</strong> Almost all shafts (${goodPercent}%) meet the specification. Only ${defectPercent}% are defective. The process is highly capable and centered on the target.`;
+      } else if (probDefect < 0.05) {
+        interpretationText.innerHTML = `<strong>Good quality.</strong> ${goodPercent}% of shafts are within spec. ${defectPercent}% are defective — you might want to slightly adjust the process mean or reduce variation to lower defects further.`;
+      } else {
+        interpretationText.innerHTML = `<strong>Warning: high defect rate.</strong> ${defectPercent}% of shafts are defective. Only ${goodPercent}% meet the specification. Consider shifting the mean toward the target or reducing the standard deviation (σ) to improve capability.`;
+      }
+    }
+
+    // ---------- Chart drawing ----------
+    function updateChart(mean, std, lsl, usl) {
+      const xMin = mean - 4 * std;
+      const xMax = mean + 4 * std;
+      const steps = 200;
+      const xValues = [];
+      const yValues = [];
+
+      for (let i = 0; i <= steps; i++) {
+        const x = xMin + (i / steps) * (xMax - xMin);
+        xValues.push(x);
+        yValues.push(normalPDF(x, mean, std));
+      }
+
+      const fillGreen = yValues.map((y, i) => {
+        const x = xValues[i];
+        return (x >= lsl && x <= usl) ? y : 0;
+      });
+      const fillRedLeft = yValues.map((y, i) => {
+        const x = xValues[i];
+        return (x < lsl) ? y : 0;
+      });
+      const fillRedRight = yValues.map((y, i) => {
+        const x = xValues[i];
+        return (x > usl) ? y : 0;
+      });
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: xValues.map(v => v.toFixed(2)),
+          datasets: [
+            {
+              label: 'Probability Density',
+              data: yValues,
+              borderColor: '#84A59D',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.1,
+              fill: false,
+              order: 1
+            },
+            {
+              label: 'Within spec',
+              data: fillGreen,
+              borderColor: 'transparent',
+              backgroundColor: 'rgba(132, 165, 157, 0.35)',
+              pointRadius: 0,
+              tension: 0.1,
+              fill: 'origin',
+              order: 2
+            },
+            {
+              label: 'Below LSL',
+              data: fillRedLeft,
+              borderColor: 'transparent',
+              backgroundColor: 'rgba(242, 132, 130, 0.35)',
+              pointRadius: 0,
+              tension: 0.1,
+              fill: 'origin',
+              order: 3
+            },
+            {
+              label: 'Above USL',
+              data: fillRedRight,
+              borderColor: 'transparent',
+              backgroundColor: 'rgba(242, 132, 130, 0.35)',
+              pointRadius: 0,
+              tension: 0.1,
+              fill: 'origin',
+              order: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const x = parseFloat(context.label);
+                  const y = context.parsed.y;
+                  return `x = ${x.toFixed(2)} mm, density = ${y.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Diameter (mm)', color: '#7a6a60' },
+              grid: { color: 'rgba(245, 202, 195, 0.3)' },
+              ticks: { maxTicksLimit: 10, color: '#7a6a60' }
+            },
+            y: {
+              title: { display: true, text: 'Probability density', color: '#7a6a60' },
+              grid: { color: 'rgba(245, 202, 195, 0.3)' },
+              ticks: { color: '#7a6a60' },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // ---------- Initialize ----------
+    syncInputs(meanSlider, meanInput, meanVal, 'mm', 2, meanError);
+    syncInputs(stdSlider, stdInput, stdVal, 'mm', 2, stdError);
+    syncInputs(lslSlider, lslInput, lslVal, 'mm', 2, lslError);
+    syncInputs(uslSlider, uslInput, uslVal, 'mm', 2, uslError);
+
+    updateAll();
+  })();
+
+  // ================================================================
+  // EXPONENTIAL DISTRIBUTION MODULE (FULLY INTERACTIVE)
+  // ================================================================
+  (function() {
+    // ---------- DOM elements ----------
+    const lambdaSlider = document.getElementById('lambdaSlider');
+    const lambdaInput = document.getElementById('lambdaInput');
+    const lambdaVal = document.getElementById('lambdaVal');
+    const lambdaError = document.getElementById('lambdaError');
+
+    const tSlider = document.getElementById('tSlider');
+    const tInput = document.getElementById('tInput');
+    const tVal = document.getElementById('tVal');
+    const tError = document.getElementById('tError');
+
+    const t1Slider = document.getElementById('t1Slider');
+    const t1Input = document.getElementById('t1Input');
+    const t1Val = document.getElementById('t1Val');
+    const t1Error = document.getElementById('t1Error');
+
+    const t2Slider = document.getElementById('t2Slider');
+    const t2Input = document.getElementById('t2Input');
+    const t2Val = document.getElementById('t2Val');
+    const t2Error = document.getElementById('t2Error');
+
+    const expMeanVal = document.getElementById('expMeanVal');
+    const expVarVal = document.getElementById('expVarVal');
+    const expCDFVal = document.getElementById('expCDFVal');
+    const expTailVal = document.getElementById('expTailVal');
+    const expCondVal = document.getElementById('expCondVal');
+    const expInterpretation = document.getElementById('expInterpretation');
+
+    const ctx = document.getElementById('expChart').getContext('2d');
+    let expChart;
+
+    // ---------- Sync inputs ----------
+    function syncInputsExp(slider, input, valEl, unit, decimals, errorEl) {
+      slider.addEventListener('input', (e) => {
+        const v = parseFloat(e.target.value);
+        input.value = v.toFixed(decimals);
+        valEl.textContent = v.toFixed(decimals) + ' ' + unit;
+        input.classList.remove('error');
+        if (errorEl) errorEl.textContent = '';
+        updateExp();
+      });
+      input.addEventListener('input', (e) => {
+        let v = parseFloat(e.target.value);
+        if (isNaN(v)) return;
+        v = Math.min(Math.max(v, parseFloat(slider.min)), parseFloat(slider.max));
+        slider.value = v;
+        e.target.value = v.toFixed(decimals);
+        valEl.textContent = v.toFixed(decimals) + ' ' + unit;
+        input.classList.remove('error');
+        if (errorEl) errorEl.textContent = '';
+        updateExp();
+      });
+      input.addEventListener('blur', (e) => {
+        let v = parseFloat(e.target.value);
+        if (isNaN(v)) v = parseFloat(slider.value);
+        v = Math.min(Math.max(v, parseFloat(slider.min)), parseFloat(slider.max));
+        e.target.value = v.toFixed(decimals);
+        slider.value = v;
+        valEl.textContent = v.toFixed(decimals) + ' ' + unit;
+        updateExp();
+      });
+    }
+
+    // ---------- Update exponential module ----------
+    function updateExp() {
+      const lambdaPerMin = parseFloat(lambdaInput.value);
+      const tSec = parseFloat(tInput.value);
+      const t1Sec = parseFloat(t1Input.value);
+      const t2Sec = parseFloat(t2Input.value);
+
+      // Validation
+      let valid = true;
+      if (lambdaPerMin <= 0) {
+        lambdaError.textContent = 'λ must be positive.';
+        lambdaInput.classList.add('error');
+        valid = false;
+      } else {
+        lambdaError.textContent = '';
+        lambdaInput.classList.remove('error');
+      }
+      if (tSec <= 0) {
+        tError.textContent = 't must be positive.';
+        tInput.classList.add('error');
+        valid = false;
+      } else {
+        tError.textContent = '';
+        tInput.classList.remove('error');
+      }
+      if (t1Sec <= 0) {
+        t1Error.textContent = 't₁ must be positive.';
+        t1Input.classList.add('error');
+        valid = false;
+      } else {
+        t1Error.textContent = '';
+        t1Input.classList.remove('error');
+      }
+      if (t2Sec < t1Sec) {
+        t2Error.textContent = 't₂ must be ≥ t₁.';
+        t2Input.classList.add('error');
+        valid = false;
+      } else {
+        t2Error.textContent = '';
+        t2Input.classList.remove('error');
+      }
+
+      if (!valid) {
+        updateExpChart(lambdaPerMin / 60, tSec);
+        return;
+      }
+
+      // Convert to consistent units (per second)
+      const lambdaPerSec = lambdaPerMin / 60;
+      const mean = 1 / lambdaPerSec;        // seconds
+      const variance = 1 / (lambdaPerSec * lambdaPerSec); // seconds²
+
+      // Probabilities
+      const cdfT = 1 - Math.exp(-lambdaPerSec * tSec);   // P(T ≤ t)
+      const tailT = Math.exp(-lambdaPerSec * tSec);      // P(T > t)
+      const cond = Math.exp(-lambdaPerSec * (t2Sec - t1Sec)); // P(T > t2 | T > t1)
+
+      // Update results
+      expMeanVal.textContent = mean.toFixed(2);
+      expVarVal.textContent = variance.toFixed(2);
+      expCDFVal.textContent = (cdfT * 100).toFixed(2) + '%';
+      expTailVal.textContent = (tailT * 100).toFixed(2) + '%';
+      expCondVal.textContent = (cond * 100).toFixed(2) + '%';
+
+      // Update chart
+      updateExpChart(lambdaPerSec, tSec);
+
+      // Update interpretation — clear, contextual, plain language
+      expInterpretation.innerHTML = `
+        <strong>Interpretation:</strong> With an average arrival rate of λ = ${lambdaPerMin.toFixed(1)} requests per minute,
+        the mean time between requests is <strong>${mean.toFixed(2)} seconds</strong>.
+        The probability that the next request arrives within ${tSec.toFixed(2)} seconds is
+        <strong>P(T ≤ ${tSec.toFixed(2)} s) = ${(cdfT * 100).toFixed(2)}%</strong>
+        (shaded area under the curve). Conversely, the chance of waiting longer than ${tSec.toFixed(2)} seconds is
+        <strong>${(tailT * 100).toFixed(2)}%</strong>.
+        <br><br>
+        <strong>💡 Memoryless property in plain words:</strong> Suppose you have already waited ${t1Sec.toFixed(2)} seconds
+        for a request. The probability that you will need to wait an additional ${(t2Sec - t1Sec).toFixed(2)} seconds
+        (i.e., total wait &gt; ${t2Sec.toFixed(2)} s) is <strong>${(cond * 100).toFixed(2)}%</strong>.
+        This is exactly the same as the probability of waiting ${(t2Sec - t1Sec).toFixed(2)} seconds from scratch —
+        the process "forgets" that you have already been waiting. This happens because arrivals occur at a constant rate
+        and are independent of each other.
+        <br><br>
+        <em>Note: This module models request inter-arrival times, assuming a constant-rate Poisson arrival process.
+        It does not describe server response time (how long a server takes to process a request).</em>
+      `;
+    }
+
+    // ---------- Exponential chart ----------
+    function updateExpChart(lambdaPerSec, tSec) {
+      const mean = 1 / lambdaPerSec;
+      const xMax = Math.max(4 * mean, tSec * 1.5, 0.5);
+      const steps = 200;
+      const xValues = [];
+      const yValues = [];
+
+      for (let i = 0; i <= steps; i++) {
+        const x = (i / steps) * xMax;
+        xValues.push(x);
+        yValues.push(lambdaPerSec * Math.exp(-lambdaPerSec * x));
+      }
+
+      const fillShade = yValues.map((y, i) => {
+        const x = xValues[i];
+        return (x <= tSec) ? y : 0;
+      });
+
+      if (expChart) expChart.destroy();
+
+      expChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: xValues.map(v => v.toFixed(2)),
+          datasets: [
+            {
+              label: 'Density f(t)',
+              data: yValues,
+              borderColor: '#84A59D',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.1,
+              fill: false,
+              order: 1
+            },
+            {
+              label: 'P(T ≤ t) shaded',
+              data: fillShade,
+              borderColor: 'transparent',
+              backgroundColor: 'rgba(246, 189, 96, 0.4)',
+              pointRadius: 0,
+              tension: 0.1,
+              fill: 'origin',
+              order: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const x = parseFloat(context.label);
+                  const y = context.parsed.y;
+                  return `t = ${x.toFixed(2)} s, density = ${y.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Time (seconds)', color: '#7a6a60' },
+              grid: { color: 'rgba(245, 202, 195, 0.3)' },
+              ticks: { maxTicksLimit: 10, color: '#7a6a60' }
+            },
+            y: {
+              title: { display: true, text: 'Probability density', color: '#7a6a60' },
+              grid: { color: 'rgba(245, 202, 195, 0.3)' },
+              ticks: { color: '#7a6a60' },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // ---------- Initialize ----------
+    syncInputsExp(lambdaSlider, lambdaInput, lambdaVal, '/min', 1, lambdaError);
+    syncInputsExp(tSlider, tInput, tVal, 's', 1, tError);
+    syncInputsExp(t1Slider, t1Input, t1Val, 's', 1, t1Error);
+    syncInputsExp(t2Slider, t2Input, t2Val, 's', 1, t2Error);
+
+    updateExp();
+  })();
+</script>
+</body>
+</html>
